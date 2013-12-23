@@ -5,19 +5,19 @@ import (
 	"strings"
 )
 
-func RedirectUrl(id, callbackUrl, realm string) (string, error) {
-	return redirectUrl(id, callbackUrl, realm, urlGetter)
+func RedirectUrl(id, callbackUrl, realm string, opArgs map[string]string) (string, error) {
+	return redirectUrl(id, callbackUrl, realm, opArgs, urlGetter)
 }
 
-func redirectUrl(id, callbackUrl, realm string, getter httpGetter) (string, error) {
+func redirectUrl(id, callbackUrl, realm string, opArgs map[string]string, getter httpGetter) (string, error) {
 	opEndpoint, opLocalId, claimedId, err := discover(id, getter)
 	if err != nil {
 		return "", err
 	}
-	return buildRedirectUrl(opEndpoint, opLocalId, claimedId, callbackUrl, realm)
+	return buildRedirectUrl(opEndpoint, opLocalId, claimedId, callbackUrl, realm, opArgs)
 }
 
-func buildRedirectUrl(opEndpoint, opLocalId, claimedId, returnTo, realm string) (string, error) {
+func buildRedirectUrl(opEndpoint, opLocalId, claimedId, returnTo, realm string, opArgs map[string]string) (string, error) {
 	values := make(url.Values)
 	values.Add("openid.ns", "http://specs.openid.net/auth/2.0")
 	values.Add("openid.mode", "checkid_setup")
@@ -38,6 +38,13 @@ func buildRedirectUrl(opEndpoint, opLocalId, claimedId, returnTo, realm string) 
 
 	if len(realm) > 0 {
 		values.Add("openid.realm", realm)
+	}
+
+	// ADDED(jsd): Pass extra openid args
+	if opArgs != nil {
+		for key, val := range opArgs {
+			values.Add(key, val)
+		}
 	}
 
 	if strings.Contains(opEndpoint, "?") {
